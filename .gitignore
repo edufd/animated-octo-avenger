@@ -2,3 +2,4 @@ config/api_keys.py
 *pyc
 *py~
 *.gitignore~
+*.hmtl~
