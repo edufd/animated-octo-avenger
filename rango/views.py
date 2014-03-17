@@ -10,15 +10,22 @@ def index(request):
     
     # Query for categories - add the list to our context dictionary.
     category_list = Category.objects.order_by('-likes')[:5]
-    context_dict = {'categories': category_list}
+    page_list = Page.objects.order_by('-views')[:5]
+    context_dict = {'categories': category_list, 'pages': page_list}
     
     # We loop through each category returned, and create a URL attribute.
     # This attribute stores an encoded URL (e.g. spaces replaced with underscores).
     for category in category_list:
-        category.url = category.name.replace(' ', '_')
+        category.url = encode(category.name)
         
     # Render the response and return to the client.    
     return render_to_response('rango/index.html', context_dict, context)
+
+def encode(name):
+    return name.replace(' ', '_')
+
+def decode(url):
+    return url.replace('_', ' ')
 
 def about(request):
     context = RequestContext(request)
@@ -35,7 +42,7 @@ def category(request, category_name_url):
     # Change underscores in the category name to spaces.
     # URLs don't handle spaces well, so we encode them as underscores.
     # We can then simply replace the underscores with spaces again to get the name.
-    category_name = category_name_url.replace('_', ' ')
+    category_name = decode(category_name_url)
     
     # Create a context dictionary which we can pass to the template rendering engine.
     # We start by containing the name of the category passed by the user.
@@ -63,3 +70,4 @@ def category(request, category_name_url):
         
     # Go render the response and return it to the client.    
     return render_to_response('rango/category.html', context_dict, context)
+
