@@ -3,8 +3,10 @@ from django.shortcuts import render
 from django.shortcuts import render_to_response
 from django.http import HttpResponse
 from rango.models import Category, Page
-from rango.forms import CategoryForm
+from rango.forms import CategoryForm, PageForm, UserForm, UserProfileForm
+
 # Create your views here.
+
 def index(request):
     # Obtain the context from the HTTP request.
     context = RequestContext(request)
@@ -25,7 +27,7 @@ def index(request):
 def encode(name):
     return name.replace(' ', '_')
 
-def decode(url):
+def decode_url(url):
     return url.replace('_', ' ')
 
 def about(request):
@@ -43,11 +45,11 @@ def category(request, category_name_url):
     # Change underscores in the category name to spaces.
     # URLs don't handle spaces well, so we encode them as underscores.
     # We can then simply replace the underscores with spaces again to get the name.
-    category_name = decode(category_name_url)
+    category_name = decode_url(category_name_url)
     
     # Create a context dictionary which we can pass to the template rendering engine.
     # We start by containing the name of the category passed by the user.
-    context_dict = {'category_name': category_name}
+    context_dict = {'category_name': category_name, 'category_name_url': category_name_url}
     
     try:
         # Can we find a category with the given name?
@@ -98,3 +100,70 @@ def add_category(request):
     # Bad form (or form details), no form supplied...
     # Render the form with error messages (if any).
     return render_to_response('rango/add_category.html', {'form': form}, context)
+    
+def add_page(request, category_name_url):
+    context = RequestContext(request)
+    
+    category_name = decode_url(category_name_url)
+    if request.method == 'POST':
+        form = PageForm(request.POST)
+        
+        if form.is_valid():
+            # This time we cannot commit straight away.
+            # Not all fields are automatically populated!
+            page = form.save(commit=False)
+            
+            # Retrieve the associated Category object so we can add it.
+            # Wrap the code in a try block - check if the category actually exists!
+            try:
+                cat = Category.objects.get(name=category_name)
+                page.category = cat
+            except Category.DoesNotExist:
+                # If we get here, the category does not exist.
+                # Go back and render the add category form as a way of saying the category does not exist.
+                return render_to_response('rango/add_category.html', {}, context)
+                
+            # Also, create a default value for the number of views.
+            page.views = 0
+            
+            # With this, we can then save our new model instance
+            page.save()
+            
+            # Now that the page is saved, display the category instead.
+            return category(request, category_name_url)
+        else:
+            print form.errors
+    else:
+        form = PageForm()
+        
+    return render_to_response( 'rango/add_page.html',
+            {'category_name_url': category_name_url,
+             'category_name': category_name, 'form': form},
+             context)
+             
+def register(request):
+    # Like before, get the request's context.
+    context = RequestContext(request)
+    
+    # A boolean value for telling the template whether the registration was successful.
+    # Set to False initially. Code changes value to True when registration succeeds.
+    registered = False
+    
+    # If it's a HTTP POST, we're interested in processing form data.
+    if request.method == 'POST':
+        # Attempt to grab information from the raw form information.
+        # Note that we make use of both UserForm and UserProfileForm.
+        user_form = UserForm(data=request.POST)
+        profile_form = UserProfileForm(data=request.POST)
+        
+        # If the two forms are valid...
+        if user_form.is_valid() and profile_form.is_vaild():
+            # Save the user's form data to the database.
+            user = user_form.save()
+            
+            # Now we hash the password with the set_password method.
+            # Once hashed, we can update the user object.
+            user.set_password(user.password)
+            user.save()
+            
+            # Now sort out the UserProfile
