@@ -3,3 +3,4 @@ config/api_keys.py
 *py~
 *.gitignore~
 *.html~
+.idea/

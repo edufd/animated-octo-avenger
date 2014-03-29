@@ -31,6 +31,9 @@ TEMPLATE_DIRS = (
     TEMPLATE_PATH,
 )
 
+# Login redirect
+LOGIN_URL = '/rango/login/'
+
 # Application definition
 
 INSTALLED_APPS = (
