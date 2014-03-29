@@ -6,13 +6,18 @@
     </head>
     
     <body>
-        <h1>Rango says...hello world!</h1>
+        {% if user.is_aunthenticated %}
+            <h1>Rango says...hello {{ user.username }}!</h1>
+        {% else %}
+            <h1>Rango says...hello world!</h1>
+        {% endif %}
+
         
         {% if categories %}
             <p/><h3>TOP 5 most likes categories</h3>
             <ul>
                 {% for category in categories %}
-                <li><a href="/rango/category/{{ category.url }}">{{ category.name }}</li>
+                <li><a href="/rango/category/{{ category.url }}">{{ category.name }}</a></li>
                 {% endfor %}
             </ul>
         {% else %}
@@ -24,7 +29,7 @@
             <p/><h3>TOP 5 most views pages</h3>
             <ul>
                 {% for page in pages %}
-                <li><a href="{{ page.url }}">{{ page.title }}</li>
+                <li><a href="{{ page.url }}">{{ page.title }}</a></li>
                 {% endfor %}
             </ul>
         {% else %}
@@ -33,6 +38,7 @@
          
         <a href="/rango/about/">About</a><br />
         <a href="/rango/add_category/">Add a New Category</a><br />
-        <a href="/rango/register/">Register Here</a>
+        <a href="/rango/register/">Register Here</a><br />
+        <a href="/rango/login/">Login</a>
     </body>    
 </html>
