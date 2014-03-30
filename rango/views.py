@@ -1,10 +1,11 @@
 from datetime import datetime
 from django.template import RequestContext
-from django.shortcuts import render_to_response
+from django.shortcuts import render_to_response, redirect
 from django.http import HttpResponse, HttpResponseRedirect
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
-from rango.models import Category, Page
+from django.contrib.auth.models import User
+from rango.models import Category, Page, UserProfile
 from rango.forms import CategoryForm, PageForm, UserForm, UserProfileForm
 from rango.bing_search import run_query
 
@@ -68,15 +69,23 @@ def about(request):
 def category(request, category_name_url):
     # Request our context from the request passed to us.
     context = RequestContext(request)
-
     # Change underscores in the category name to spaces.
     # URLs don't handle spaces well, so we encode them as underscores.
     # We can then simply replace the underscores with spaces again to get the name.
     category_name = decode_url(category_name_url)
 
+    result_list = []
+
+    if request.method == 'POST':
+        query = request.POST['query'].strip()
+
+        if query:
+            # Run our Bing function to get the results list!
+            result_list = run_query(query)
+
     # Create a context dictionary which we can pass to the template rendering engine.
     # We start by containing the name of the category passed by the user.
-    context_dict = {'category_name': category_name, 'category_name_url': category_name_url, 'cat_list': get_category_list()}
+    context_dict = {'category_name': category_name, 'category_name_url': category_name_url, 'cat_list': get_category_list(), 'result_list': result_list}
 
     try:
         # Can we find a category with the given name?
@@ -290,15 +299,35 @@ def user_logout(request):
     # Take the user back to the homepage.
     return HttpResponseRedirect('/rango/')
 
-def search(request):
+@login_required
+def profile(request):
+
     context = RequestContext(request)
-    result_list = []
+    u = User.objects.get(username=request.user)
 
-    if request.method == 'POST':
-        query = request.POST['query'].strip()
+    try:
+        up = UserProfile.objects.get(user=u)
+    except:
+        up = None
 
-        if query:
-            # Run our Bing function to get the results list!
-            result_list = run_query(query)
+    context_dict = {'user': u, 'userprofile': up, 'cat_list': get_category_list()}
 
-    return render_to_response('rango/search.html', {'result_list': result_list, 'cat_list': get_category_list()}, context)
+    return render_to_response('rango/profile.html', context_dict, context)
+
+def track_url(request):
+
+    context = RequestContext(request)
+    page_id = None
+    url = '/rango/'
+    if request.method == 'GET':
+        if 'page_id' in request.GET:
+            page_id = request.GET['page_id']
+            try:
+                page = Page.objects.get(id=page_id)
+                page.views += 1
+                page.save()
+                url = page.url
+            except:
+                pass
+
+    return redirect(url)

@@ -14,7 +14,7 @@
         {% if categories %}
         <ul>
             {% for category in categories %}
-            <li><a href="/rango/category/{{ category.url }}">{{ category.name }} ({{ category.likes }} like(s))</a></li>
+            <li><a href="/rango/category/{{ category.url }}">{{ category.name }}</a> - ({{ category.likes }} like(s))</li>
             {% endfor %}
         </ul>
         {% else %}
@@ -28,7 +28,7 @@
         {% if pages %}
         <ul>
             {% for page in pages %}
-            <li><a href="{{ page.url}}">{{ page.title }}</a> - {{ page.category }} ({{ page.views }} view(s))</li>
+            <li><a href="/rango/goto/?page_id={{page.id}}">{{ page.title }}</a> - {{ page.category }} ({{ page.views }} view(s))</li>
             {% endfor %}
         </ul>
         {% else %}

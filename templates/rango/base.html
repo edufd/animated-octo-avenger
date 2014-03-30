@@ -21,6 +21,7 @@
                        {% if user.is_authenticated %}
                         <li class="navbar-text">Welcome, {{ user.username }}!</li>
                         <li><a href="/rango/logout/">Logout</a></li>
+                        <li><a href="/rango/profile/">Profile</a></li>
                        {% else %}
                         <li><a href="/rango/register/">Register</a></li>
                         <li><a href="/rango/login/">Login</a></li>
@@ -32,7 +33,6 @@
                         <li><a href="/rango/add_category/">Add Category</a></li>
                        {% endif %}
                        <li><a href="/rango/about/">About</a></li>
-                       <li><a href="/rango/search">Search</a></li>
                    </ul>
                </div>
                <!--/.nav-collapse -->
@@ -42,8 +42,14 @@
             <div class="row">
                 <div class="col-sm-3 col-md-3">
                     <div class="well sidebar-nav">
-                        <!--- Empty for the timebeing -->
-                        {% include "rango/category_list.html" %}
+                        {% block sidebar %}
+                        {% endblock %}
+                        <div id="cats">
+                           {% if cat_list %}
+                               <ul class="nav nav-list"><li>Category List</li></ul>
+                               {% include 'rango/category_list.html' with cat_list=cat_list %}
+                           {% endif %}
+                        </div>
                     </div>
                     <!--/.well -->
                 </div>
