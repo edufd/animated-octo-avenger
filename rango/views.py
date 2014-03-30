@@ -75,7 +75,8 @@ def category(request, category_name_url):
         
     # Go render the response and return it to the client.    
     return render_to_response('rango/category.html', context_dict, context)
-    
+
+@login_required
 def add_category(request):
     # Get the context from the request.
     context = RequestContext(request)
@@ -102,7 +103,8 @@ def add_category(request):
     # Bad form (or form details), no form supplied...
     # Render the form with error messages (if any).
     return render_to_response('rango/add_category.html', {'form': form}, context)
-    
+
+@login_required
 def add_page(request, category_name_url):
     context = RequestContext(request)
     
@@ -245,8 +247,11 @@ def user_login(request):
 
 @login_required
 def restricted(request):
-    return HttpResponse("Since you're logged in, you can see this text@!")
+    context = RequestContext(request)
+    return render_to_response('rango/restricted.html', {}, context)
 
+# Use the login_required() decorator to ensure only those logged in can access the view.
+@login_required
 def user_logout(request):
     # Since we know the user is logged in, we can now just log the out
     logout(request)
