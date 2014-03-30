@@ -6,6 +6,7 @@ from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
 from rango.models import Category, Page
 from rango.forms import CategoryForm, PageForm, UserForm, UserProfileForm
+from rango.bing_search import run_query
 
 
 # Create your views here.
@@ -15,14 +16,9 @@ def index(request):
     context = RequestContext(request)
 
     # Query for categories - add the list to our context dictionary.
-    category_list = Category.objects.order_by('-likes')[:5]
+    cat_list = get_category_list()
     page_list = Page.objects.order_by('-views')[:5]
-    context_dict = {'categories': category_list, 'pages': page_list}
-
-    # We loop through each category returned, and create a URL attribute.
-    # This attribute stores an encoded URL (e.g. spaces replaced with underscores).
-    for category in category_list:
-        category.url = encode_url(category.name)
+    context_dict = {'categories': cat_list[:5], 'pages': page_list, 'cat_list': cat_list}
 
     if request.session.get('last_visit'):
         # The session has a value for the last visit.
@@ -48,16 +44,23 @@ def encode_url(name):
 def decode_url(url):
     return url.replace('_', ' ')
 
+def get_category_list():
+    cat_list = Category.objects.order_by('-likes')
+
+    # We loop through each category returned, and create a URL attribute.
+    # This attribute stores an encoded URL (e.g. spaces replaced with underscores).
+    for category in cat_list:
+        category.url = encode_url(category.name)
+    return cat_list
 
 def about(request):
     context = RequestContext(request)
 
-    context_dict = {'boldmessage': "I am bold font form the context"}
     if request.session.get('visits'):
         count = request.session.get('visits')
     else:
         count = 0
-    context_dict = {'visits': count}
+    context_dict = {'visits': count, 'cat_list': get_category_list()}
     # remember to include the visit data
     return render_to_response('rango/about.html', context_dict, context)
 
@@ -73,7 +76,7 @@ def category(request, category_name_url):
 
     # Create a context dictionary which we can pass to the template rendering engine.
     # We start by containing the name of the category passed by the user.
-    context_dict = {'category_name': category_name, 'category_name_url': category_name_url}
+    context_dict = {'category_name': category_name, 'category_name_url': category_name_url, 'cat_list': get_category_list()}
 
     try:
         # Can we find a category with the given name?
@@ -125,7 +128,7 @@ def add_category(request):
 
     # Bad form (or form details), no form supplied...
     # Render the form with error messages (if any).
-    return render_to_response('rango/add_category.html', {'form': form}, context)
+    return render_to_response('rango/add_category.html', {'form': form, 'cat_list': get_category_list()}, context)
 
 
 @login_required
@@ -149,7 +152,7 @@ def add_page(request, category_name_url):
             except Category.DoesNotExist:
                 # If we get here, the category does not exist.
                 # Go back and render the add category form as a way of saying the category does not exist.
-                return render_to_response('rango/add_category.html', {}, context)
+                return render_to_response('rango/add_category.html', {'cat_list': get_category_list()}, context)
 
             # Also, create a default value for the number of views.
             page.views = 0
@@ -227,7 +230,7 @@ def register(request):
     # Render the template depending on the context.
     return render_to_response(
         'rango/register.html',
-        {'user_form': user_form, 'profile_form': profile_form, 'registered': registered},
+        {'user_form': user_form, 'profile_form': profile_form, 'registered': registered, 'cat_list': get_category_list()},
         context)
 
 
@@ -269,13 +272,13 @@ def user_login(request):
     else:
         # No context variables to pass to the template system, hence the
         # blank dictionary object...
-        return render_to_response('rango/login.html', {}, context)
+        return render_to_response('rango/login.html', {'cat_list': get_category_list()}, context)
 
 
 @login_required
 def restricted(request):
     context = RequestContext(request)
-    return render_to_response('rango/restricted.html', {}, context)
+    return render_to_response('rango/restricted.html', {'cat_list': get_category_list()}, context)
 
 
 # Use the login_required() decorator to ensure only those logged in can access the view.
@@ -286,3 +289,16 @@ def user_logout(request):
 
     # Take the user back to the homepage.
     return HttpResponseRedirect('/rango/')
+
+def search(request):
+    context = RequestContext(request)
+    result_list = []
+
+    if request.method == 'POST':
+        query = request.POST['query'].strip()
+
+        if query:
+            # Run our Bing function to get the results list!
+            result_list = run_query(query)
+
+    return render_to_response('rango/search.html', {'result_list': result_list, 'cat_list': get_category_list()}, context)
