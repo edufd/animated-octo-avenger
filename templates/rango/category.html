@@ -17,9 +17,16 @@
             <strong>No pages currently in category.</strong>
         {% endif %}
 
+        <p>
+
+        <b id="like_count">{{ category.likes }}</b> people like this category
+
         {% if user.is_authenticated %}
-            <p/><a href="/rango/category/{{ category_name_url }}/add_page/">Add page</a>
+            <button id="likes" data-catid="{{ category.id }}" class="btn btn-mini btn-primary" type="button">Like</button>
+            <p/><a href="/rango/category/{{ category_name_url }}/add_page/">Add a page</a>
         {% endif %}
+
+        </p>
 
     {% else %}
         The specified category {{ category_name }} does not exist!

@@ -46,6 +46,7 @@ def decode_url(url):
     return url.replace('_', ' ')
 
 def get_category_list():
+
     cat_list = Category.objects.order_by('-likes')
 
     # We loop through each category returned, and create a URL attribute.
@@ -53,6 +54,33 @@ def get_category_list():
     for category in cat_list:
         category.url = encode_url(category.name)
     return cat_list
+
+def get_category_list(max_results=0, starts_with=''):
+    cat_list = []
+    if starts_with:
+        cat_list = Category.objects.filter(name__istartswith=starts_with)
+    else:
+        cat_list = Category.objects.all()
+
+    if max_results > 0:
+        if len(cat_list) > max_results:
+            cat_list = cat_list[:max_results]
+
+    for cat in cat_list:
+        cat.url = encode_url(cat.name)
+
+    return cat_list
+
+def suggest_category(request):
+    context = RequestContext(request)
+    cat_list = []
+    starts_with = ''
+    if request.method == 'GET':
+        starts_with = request.GET['suggestion']
+
+    cat_list = get_category_list(8, starts_with)
+
+    return render_to_response('rango/category_list.html', {'cat_list': cat_list}, context)
 
 def about(request):
     context = RequestContext(request)
@@ -331,3 +359,21 @@ def track_url(request):
                 pass
 
     return redirect(url)
+
+@login_required
+def like_category(request):
+
+    context = RequestContext(request)
+    cat_id = None
+    if request.method == 'GET':
+        cat_id = request.GET['category_id']
+
+    likes = 0
+    if cat_id:
+        category = Category.objects.get(id=int(cat_id))
+        if category:
+            likes = category.likes + 1
+            category.likes = likes
+            category.save()
+
+    return HttpResponse(likes)

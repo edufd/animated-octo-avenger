@@ -44,12 +44,14 @@
                     <div class="well sidebar-nav">
                         {% block sidebar %}
                         {% endblock %}
-                        <div id="cats">
+                        <input class="input-medium search-query form-control" type="text" name="suggestion" value=""
+                               id="suggestion" />
+
                            {% if cat_list %}
-                               <ul class="nav nav-list"><li>Category List</li></ul>
-                               {% include 'rango/category_list.html' with cat_list=cat_list %}
+                               <div id="cats">
+                                    {% include 'rango/category_list.html' with cat_list=cat_list %}
+                               </div>
                            {% endif %}
-                        </div>
                     </div>
                     <!--/.well -->
                 </div>
@@ -72,5 +74,6 @@
         </footer>
         <script src="{% static 'js/jquery-2.1.0.min.js' %}"></script>
         <script src="{% static 'js/bootstrap.min.js' %}"></script>
+        <script src="{% static 'js/rango-ajax.js' %}"></script>
     </body>
 </html>
